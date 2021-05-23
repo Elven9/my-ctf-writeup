@@ -1,9 +1,13 @@
 # My CTF Writeup
 
-By the time of May 2021, I started to play CTF. From the beginning of my learning path, I found that it's difficult for a beginner to find a precise resource to start with or practice their CTF skill on a platform relevant to their skill level. I know there have already been lots of resources out there like writeups, Github repo that can equip you with powerful skills to tackle these CTF challenges, but it's a little bit too overwhelming for a beginner. So in this repository, I will provide my thought process toward each challenge, how I do the recon of this problem, correct tools to solve it, and more links to the detail of techniques. Hope that my articles can help you understand more about CTF. Have Fun !!
+By the time of May 2021, I started to play CTF. From the beginning of my learning path, I found that it's difficult for a beginner to find a **precise** resource to start with or practice their CTF skill on a platform relevant to their skill level. I know there have already been lots of resources out there like writeups, Github repo that can equip you with powerful skills to tackle these CTF challenges, but it's a little bit too overwhelming for a beginner. So in this repository, I will provide my thought process toward each challenge, how I do the recon of this problem, correct tools to solve it, and more links to the detail of techniques. Hope that my articles can help you understand more about CTF. Have Fun !!
 
 Info about me:
 - [CTFTime Team: AtLas9](https://ctftime.org/team/154996)
+
+# Practice Site
+
+- [Picoctf](https://picoctf.org/) - This is a very beginner friendly practice site 😀
 
 # Years 2021
 
