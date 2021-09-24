@@ -1,4 +1,4 @@
-# NYCUs 2021 Secure Programming
+# NYCU 2021 Secure Programming
 
 This course is provided by NYCU (Taiwan).
 

