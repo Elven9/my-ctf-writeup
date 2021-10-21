@@ -97,3 +97,117 @@ print(p.recvall().decode())
 
 p.close()
 ```
+
+## Single
+
+這題在測試對 ECC 的理解程度。題目給了 output.txt 和產出 output.txt 的程式碼 single.py。從 single.py 中可以看到，這是一個 ECC curve 的 Diffie-Hellman Key Exchange 的過程，而兩個 point A 和 B 會在 output.txt 中可以觀察到：
+
+```python
+p = 9631668579539701602760432524602953084395033948174466686285759025897298205383
+gx = 5664314881801362353989790109530444623032842167510027140490832957430741393367
+gy = 3735011281298930501441332016708219762942193860515094934964869027614672869355
+G = Point(gx, gy)
+assert is_on_curve(G)
+
+#Alice
+dA = random.randint(1, p-2)
+A = point_multiply(G, dA)
+print('A =', A)
+
+#Bob
+dB = random.randint(1, p-2)
+B = point_multiply(G, dB)
+print('B =', B)
+```
+
+所以整理一下我們目前有的資訊:
+- p
+- G
+- A
+- B
+- Order = p-1
+
+根據 flag 被 encode 的方式，可以確認我們的目標是要找到 A 的 private key，也就是程式碼中的 `dA`：
+
+```python
+#Encryption
+k = point_multiply(B, dA).x
+k = hashlib.sha512(str(k).encode('ascii')).digest()
+enc = bytes(ci ^ ki for ci, ki in zip(FLAG.ljust(len(k), b'\0'), k))
+print('enc =', enc.hex())
+```
+
+Ecc Crypto 的弱點來自於使用的曲線強度如何，所以我們要先求得 a, b 以判別這個曲線是否有特殊性質。求 a, b 的方式也不難，因為我們已經有 `A`, `B` 兩點，即可求得二元方程式：
+
+```python
+a = (((A.y^2-A.x^3)-(B.y^2-B.x^3)) / (A.x-B.x)) % p
+print(a)
+b = (A.y^2-A.x^3-a*A.x)%p
+print(b)
+```
+
+得到 a 跟 b 後嘗試使用 sage 內建的 EllipticCurve 去產出一個 Curve，但 sage 馬上爆出這是一個 singular curve，sage 並不接受這條 curve。簡報中有提到兩種方法可以處理 singuler curve，但從 order 的 factor 來看這個曲線有 smooth order 的現象：
+
+```python
+fs = factor(p-1)
+print(fs)
+# Output: 2 * 2329468847 * 2414146711 * 2484441769 * 2546315801 * 2988745687 * 3048801089 * 3618313243 * 4105685383
+```
+
+所以我們接下來使用 Pohlig-Hellman 來處理這個 curve。但下一個問題是，因為我們不能使用 sage 內建的 elliptic curve，也就是我們不能直接使用內建的 bsgs，必須要自己建一個 bsgs。
+
+```python
+# bsgs
+def my_bsgs(a, b, n):
+    m = ceil(sqrt(n))
+    
+    table = {}
+    
+    prevPoint = O
+    # Compute Table of J*Gi
+    for j in range(0, m):
+        table[prevPoint] = j
+        prevPoint = point_addition(prevPoint, a)
+            
+    gama = b
+    constant_m_alpha = point_inverse(point_multiply(a, m))
+
+    for i in range(0, m):
+        # Search
+        if gama in table:
+            print("found: " + str(i*m+table[gama]))
+            return i*m+table[gama]
+
+        gama = point_addition(gama, constant_m_alpha)
+        
+    print("Solution Not Found")
+    return None
+```
+
+整個 Pohlig-Hellman 演算法：
+
+```python
+xis = []
+
+for fac in fs:
+    gi = point_multiply(G, n//fac[0])
+    pi = point_multiply(A, n//fac[0])
+    
+    di = my_bsgs(gi, pi, fac[0])
+    xis.append(di)
+
+da = crt(xis, [fac[0] for fac in fs])
+print(da)
+```
+
+執行完後最終得到 `dA` 後就可以還原出我們的 key 了：
+
+```python
+# Decode
+encode_flag = bytes.fromhex(enc)
+k = point_multiply(B, da).x
+k = hashlib.sha512(str(k).encode('ascii')).digest()
+flag = bytes(ci ^^ ki for ci, ki in zip(encode_flag, k))
+print('flag =', flag)
+```
+
