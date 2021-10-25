@@ -29,4 +29,4 @@ Crypto III
 - Lab - HNP
 - Lab - LEA
 - Lab - LAT
-- Homework - HNP-revenge
+- [Homework - HNP-revenge](./0x01-Crypto/writeup.md#Crypto---HNP-Revenge-\[250\])
