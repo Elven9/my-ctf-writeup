@@ -98,7 +98,7 @@ print(p.recvall().decode())
 p.close()
 ```
 
-## Single
+## Crypto - Single \[200\]
 
 這題在測試對 ECC 的理解程度。題目給了 output.txt 和產出 output.txt 的程式碼 single.py。從 single.py 中可以看到，這是一個 ECC curve 的 Diffie-Hellman Key Exchange 的過程，而兩個 point A 和 B 會在 output.txt 中可以觀察到：
 
