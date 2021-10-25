@@ -211,3 +211,91 @@ flag = bytes(ci ^^ ki for ci, ki in zip(encode_flag, k))
 print('flag =', flag)
 ```
 
+## Crypto - HNP Revenge \[250\]
+
+這題跟這星期的 lab HNP 的 code 基本上是一模一樣的，唯一的差別是在選 K 的方式。不同於 lab 那題兩次加密之間 K 值是一個線性關係，這次則是把 k 的選擇方式換成**一段固定 hash 值加上另一段由 D 產生的數值加上 message 產出的 hash 值**，得到 k 的選擇：
+
+```python
+h = sha256(msg.encode()).digest()
+k = int(md5(b'secret').hexdigest() + md5(long_to_bytes(prikey.secret_multiplier) + h).hexdigest(), 16)
+sig = prikey.sign(bytes_to_long(h), k)
+print(f'({sig.r}, {sig.s})')
+```
+
+所以我們接下來的解題方向就是用 Lattice 去解這個已經知道大部分 MSB 的 K (小 k 數值計算)。先整理一下計算公式：
+
+```python
+# 因為我們的 MSB 並不是全部為 0、傳統解小 k 的方法，所以我們需要修改一下原本公式中的常數項計算方式
+t = (-1* inverse(s1, n)*s2*r1*inverse(r2, n)) %n
+u = (inverse(s1, n)*r1*h2*inverse(r2, n) - inverse(s1, n) * h1 + (t+1)*baseK) %n
+```
+
+這裡有個雷需要注意一下，我們可以完全確定 128 bit 數是，但是可以觀察到 `Sqrt(n)` 的數值其實比 `2^128` 小，所以我們選擇 K 的時候要選 `2^127`，以及等等需要 Try 幾次直到剛剛好知道 129 個 bit 的那一次才會成功
+
+```python
+>>> from ecdsa import SECP256k1
+>>> from math import sqrt, ceil
+>>> SECP256k1.order
+mpz(115792089237316195423570985008687907852837564279074904382605163141518161494337)
+>>> ceil(sqrt(SECP256k1.order))
+340282366920938425684442744474606501888
+>>> 2**128
+340282366920938463463374607431768211456
+>>>
+```
+
+選好 K 後就可以建構我們的 LLL methods 了：
+
+```python
+h1 = bytes_to_long(sha256("A".encode()).digest())
+r1 = 58084863080992072580334022005567931021154043643259552401385782172570240816523
+s1 = 107712904646841307549216306134569074827075078269914988676888071413702894680658
+
+h2 = bytes_to_long(sha256("B".encode()).digest())
+r2 = 100750964988822020802724921911452399593227921044610135806466924123392451666453
+s2 = 100048223890738129273755755203911968532962608890184062887455576356224860362848
+
+t = (-1* inverse(s1, n)*s2*r1*inverse(r2, n)) %n
+u = (inverse(s1, n)*r1*h2*inverse(r2, n) - inverse(s1, n) * h1 + (t+1)*baseK) %n
+K = 2^127
+
+B = matrix(ZZ, [[n, 0, 0], [t, 1, 0], [u, 0, K]])
+B.LLL()
+
+# 執行結果：
+# [ 118896613776238449478129936428974463840  -32806342291851023802586340638786914878  170141183460469231731687303715884105728]
+# [-196032320073347428542397021099225337843   96291860774951207159831053703429490718  170141183460469231731687303715884105728]
+# [-221830141883562033496969161916984809373 -276742487483606481063492584316071339063                                        0]
+```
+
+選出第二列的 base vector 出來得到 K1, K2 後，就可以得到 d 了：
+
+```python
+d = ((s1 * (196032320073347428542397021099225337843 + baseK)  - h1) * inverse(r1, n)) %n
+
+# 105228346465649343550315876720427581326892142235257410156707131772573340314147
+```
+
+重建出 ecdst 後自行簽章 `Kuruma`，丟回 Server 後就可以得到我們的 Flag 了
+
+```python
+from random import randint
+from Crypto.Util.number import *
+from hashlib import sha256, md5
+from ecdsa import SECP256k1
+from ecdsa.ecdsa import Public_key, Private_key, Signature
+from math import sqrt, ceil
+
+E = SECP256k1
+G, n = E.generator, E.order
+
+d = 105228346465649343550315876720427581326892142235257410156707131772573340314147
+pubkey = Public_key(G, d*G)
+prikey = Private_key(pubkey, d)
+print(f'P = ({pubkey.point.x()}, {pubkey.point.y()})')
+
+h = sha256("Kuruwa".encode()).digest()
+k = int(md5(b'secret').hexdigest() + md5(long_to_bytes(prikey.secret_multiplier) + h).hexdigest(), 16)
+sig = prikey.sign(bytes_to_long(h), k)
+print(f'({sig.r}, {sig.s})')
+```
