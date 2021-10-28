@@ -1,4 +1,4 @@
-# HW1 Writeup
+# 0x01 Crypto Writeup
 
 ## Crypto - nLFSR \[150\]
 

