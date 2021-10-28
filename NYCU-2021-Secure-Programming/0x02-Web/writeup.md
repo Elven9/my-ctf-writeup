@@ -20,7 +20,7 @@
 
 我們只要透過指令 `git reset HEAD^ --hard` 回到 First commit，就可以得到所有 Dev 的程式碼了。
 
-從這些程式碼中可以看到，這個頁面「曾經」有一個 dev_test_page 的存在，裏面有 Upload 功能以及 Share Image 的功能。為什麼是說「曾經」呢？理論上這些檔案本不應該存在在根目錄了，但實際上切到 `https://imgura.chal.h4ck3r.quest/dev_test_page/?page=pages/share` 路徑上仍可以看到舊的頁面，這邊真的滿起怪的，也許是題目故意設計的吧。
+從這些程式碼中可以看到，這個頁面「曾經」有一個 dev_test_page 的存在，裏面有 Upload 功能以及 Share Image 的功能。為什麼是說「曾經」呢？理論上這些檔案本不應該存在在根目錄了，但實際上切到 `https://imgura.chal.h4ck3r.quest/dev_test_page/?page=pages/share` 路徑上仍可以看到舊的頁面，這邊真的滿奇怪的，也許是題目故意設計的吧。
 
 ![Imgura dev src page](./resources/Screen%20Shot%202021-10-28%20at%204.22.26%20PM.png)
 
