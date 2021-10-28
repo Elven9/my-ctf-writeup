@@ -41,5 +41,5 @@ Web I
 - Lab - DNS Lookup Tool
 - Lab - DNS Lookup Tool /w WAF
 - Lab - Log me in
-- [Homework - Imgura]()
-- [Homework - DVD Screensaver]()
+- [Homework - Imgura](./0x02-Web/writeup.md#Homework---Imgura-[100])
+- [Homework - DVD Screensaver](./0x02-Web/writeup.md#Homework---Screensaver-[200])
