@@ -125,8 +125,8 @@ time.innerText = new Date($cat_info->time_integer)
     }
 }
 
-$resp = match ($_GET["method"]) {
-    "post" => new CatPost(),
-    "show" => new CatWithHashGet(),
-    default => new CatGet(),
-};
+// $resp = match ($_GET["method"]) {
+//     "post" => new CatPost(),
+//     "show" => new CatWithHashGet(),
+//     default => new CatGet(),
+// };
