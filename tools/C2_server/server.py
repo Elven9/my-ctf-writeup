@@ -34,18 +34,6 @@ def write_basic_map_content():
         Basic_Map_Content[payload["key"]] = payload["value"]
         return "Create"
 
-# Static Page Serve
-@app.route("/js/<string:page>")
-def serve_static_js(page):
-    res = Response(render_template(f"./{page}"))
-    res.content_type = "application/javascript"
-    return res
-
-@app.route("/html/<string:page>")
-def serve_static_html(page):
-    # Maybe Path Traversal LOL ?
-    return render_template(f"./{page}")
-
 # Maybe Add File Download Support
 
 if __name__ == "__main__":
