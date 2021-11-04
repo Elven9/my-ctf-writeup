@@ -34,6 +34,7 @@ The app is vulnerability to csp policy injection. Except `connect-src`, other po
 
 url: `/?🤯=/flag.txt`
 
-## CSP 2
+## CSP 2/3
 
+Php Object Injection at `/?method=post`, Report URI Modification, Data Exfiltration
 
