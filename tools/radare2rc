@@ -1,0 +1,9 @@
+# Setup color and theme
+eco ayu
+e scr.color=1
+
+# ESIL
+e emu.str=true
+
+# Project Setting
+e prj.vc=false
