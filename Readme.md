@@ -16,6 +16,8 @@ About me:
 
 ## Years 2021
 
+- Golden Shield, Taiwan 2021, on-site
+- DamCTF 2021
 - [WeCTF 2021](./WeCTF-2021/writeup.md)
 - [DCTF 2021](https://ctftime.org/event/1361)
 - [My First CTF 2021](https://ais3.org/mfctf/)
