@@ -7,3 +7,7 @@ e emu.str=true
 
 # Project Setting
 e prj.vc=false
+
+# r2ghidra setting
+e r2ghidra.sleighhome=/home/kali/.local/share/radare2/plugins/r2ghidra_sleigh
+e cmd.pdc=pdg
