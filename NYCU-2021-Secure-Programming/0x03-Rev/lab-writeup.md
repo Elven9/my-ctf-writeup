@@ -46,3 +46,14 @@ Reverse Order?
 Just like lab - main3, but in x86
 
 Flag store at: `drake_vmimef283jfemkfms.flag`
+
+## Lab - HelloWindows
+
+NotFLAG{Windows_15_S0_GREAT_15NT_IT?}
+FLAG
+
+Substract with user input, xor with it, got the flag with x64dbg.
+
+Flag: `FLAG{H3ll_W1nd0wS}`
+
+## Lab - 
