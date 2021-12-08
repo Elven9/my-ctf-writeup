@@ -56,4 +56,20 @@ Substract with user input, xor with it, got the flag with x64dbg.
 
 Flag: `FLAG{H3ll_W1nd0wS}`
 
-## Lab - 
+## Lab - Traditional_GUI
+
+account: 亞洲統神
+password: toyz2k7e.3
+
+`WinMain` is primary about creating the gui interface only. All logic is at call back function.
+
+The big block of code is about drawing flag with raw line.
+
+Flag: `FLAG{WIN32_GUI_SO_PAIN}`
+
+## Lab - dll
+
+First Number: 1418168133
+Second Number: 1717982566
+
+Flag: `FLAG{dLL_So_c00L_R1gHT?}`

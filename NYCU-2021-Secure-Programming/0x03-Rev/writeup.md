@@ -35,3 +35,34 @@ Reverse 到這邊才發現，原來 `0x2020` 後面還藏有一段 instructions�
 ![fgsb](resource/gdb_view_of_flag.png)
 
 ![fimc](resource/gdb_in_memory_code.png)
+
+## Homework - giveUFlag
+
+TLSCallback
+
+- https://docs.microsoft.com/en-us/cpp/parallel/thread-local-storage-tls?view=msvc-170
+- http://lallouslab.net/2017/05/30/using-cc-tls-callbacks-in-visual-studio-with-your-32-or-64bits-programs/
+
+TLS Option Section 有寫
+
+### start - 0x401180
+
+- It has sleep mechanism for 0x3E8 millieseconds
+- _initterm
+  - There are two _initterm to Two functions: `sub_401130`, `sub_401010`
+
+`sub_401010`
+
+- gui app ? console app ?
+
+### sub_0x401940
+
+- Being call twice, first b4 main, second in main
+
+sleep a lot and give u img and give u flag
+
+`YOU_USE_HAIYA_WHEn_YOU'RE_DISAPPOINTED_MMSSGG`
+
+Flag: `FLAG{PaRs1N6_PE_aNd_D11_1S_50_C00111!!!!!111}`
+
+怎麼感覺真的是在 give u Flag....
