@@ -73,3 +73,15 @@ First Number: 1418168133
 Second Number: 1717982566
 
 Flag: `FLAG{dLL_So_c00L_R1gHT?}`
+
+## Lab - HellWindow
+
+2: rdx 0000009DFE56F110 "`FLAG{WOW_YOU_F0UND_M3!!!!!!!!!!!!?!}`"
+
+.....
+
+At atoexit callback. Fs acutally mean FileSystem, not fs segment...
+
+## Lab - 3xc3pt
+
+2: rdx 0000009D7F2FE720 "`FLAG{Wh3n_Do1nG_PpT_SEH_alWays_be_pAtch3d_to_SHE___=_=}`"
