@@ -114,10 +114,36 @@ sleep a lot and give u img and give u flag
 
 ## Homework - Nani
 
-patching out hyperv (cause my computer has hyperv enabled for docker and wsl)
+這題的 code base 比較大一點，有看到許多有意思程式碼，也有許多程式碼還並沒有看懂就先找到 Flag 了，所以這邊只先以繞過 anti-debugger 和 anti-vm，以及找到 Flag 的過程去描述。
 
-There Are some code writing to the .text session, by virtual protect change permission to rwx.
+### Bypass Anti-Debugger & Anti-VM
 
-After write, turn the permission back to rx, like before
+這支 binary 有用到幾個 Anti-Reverse 的做法:
 
-`FLAG{r3v3rs3_Ma5T3R}`
+- UPX 3.96 Packer
+- 執行 `IsDebuggerPresent` 確認目前是否在 Debugger 中
+- 從 `cpuid`, `rax = 40000000h` 取得 cpu 資訊，比對是否在 KVM, HyperV, Vmware, Virtualbox, XenVm 中
+
+Packer 的部分簡單，透過 Detect it Easy 可以判斷出相應的 UPX version 來脫殼。`IsDebuggerPresent` 可以透過 x64dbg 的 ScyllaHide Plugin 處理。VM 的部分，雖然說我並沒有在 VM 中執行，但是在需要開啟 Docker 的狀況下系統 hyper v 是有打開的，所以這邊有簡單的透過 patching 把比對字串改掉，簡單 bypass 掉 anti-vm 的功能。
+
+### Finding Flag
+
+在 Anti-VM 結束後，整隻程式執行到 `0x17DF` 後，發現這邊有一隻帶有 `VirtualProtect` 的 Exception Handler。詳細 reverse 後發現這裡有寫一段與 `0x87` xor 的資料到 `0xAF15` 這個位在 `.text` section 的記憶體位置，寫完之後再把 `.text` 的權限調回 r-x。這裡就很有趣拉，實際看一下 `0xAF15` 位置上的資料，發現 0x100 byte 之後的資料看起來也是一段程式碼，所以最後直接下 x64dbg 斷點到 handler 裡面，直接從 debugger 截出最後生出 flag 的程式碼。
+
+![Decoded Instructions](Hw-Nani/CodeInMemoryAfterDecoeded.png)
+
+因為我不確定怎樣會觸發到這段程式碼，最後乾脆直接 reverse 這段程式碼後，寫出一個 script 得到最後的 Flag:
+
+```python
+encoded_str = [ 0xE8, 0xE2, 0xEF, 0xE9, 0xD5, 0xDC, 0x9D, 0xD8, 0x9D, 0xDC, 0xDD, 0x9D, 0xF1, 0xE3, 0xCF, 0x9B, 0xFA, 0x9D, 0xFC, 0xD3 ]
+key = 0xAE
+
+result = ""
+
+for i in range(0x13+1):
+    result += chr(encoded_str[i] ^ key)
+
+print(result)
+```
+
+Flag: `FLAG{r3v3rs3_Ma5T3R}`
