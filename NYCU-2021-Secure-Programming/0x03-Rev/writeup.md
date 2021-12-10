@@ -111,3 +111,13 @@ sleep a lot and give u img and give u flag
 `YOU_USE_HAIYA_WHEn_YOU'RE_DISAPPOINTED_MMSSGG`
 
 怎麼感覺真的是在 give u Flag....
+
+## Homework - Nani
+
+patching out hyperv (cause my computer has hyperv enabled for docker and wsl)
+
+There Are some code writing to the .text session, by virtual protect change permission to rwx.
+
+After write, turn the permission back to rx, like before
+
+`FLAG{r3v3rs3_Ma5T3R}`
