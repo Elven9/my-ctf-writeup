@@ -1,0 +1,32 @@
+
+Step to Pwn:
+
+- Let Chal Call As Many Time As Possible
+
+
+b'
+7fff1b927d40
+|5|
+ffffffe0|
+a|
+7ffffff9|
+
+55877851c670|
+55877851f0a0|
+7fff1b927d70
+|55877851c5d1
+|6574697277
+|0
+|0
+|0
+|17851c1a0
+|55877851f0a0
+|7fff1b927d80
+|55877851c661
+|0
+|7f889f7f10b3  jjjj
+|71
+|7fff1b927e78
+|19f9b2618
+|55877851c5fd
+|55877851c670\n'
