@@ -480,4 +480,6 @@ send_cmd2srv("global", "read", (FLAG_PATH+"\0").encode())
 
 #### 執行結果
 
+![Fullchain-nerf result](./resources/fullchain-nerf%20result.png)
+
 我的解題順序其實是先寫 `fullchain-nerf` 才去解 `fullchain`，所以才會跟 fullchain 那邊的解法有滿多差異，Code 也比較沒有邏輯 XD

