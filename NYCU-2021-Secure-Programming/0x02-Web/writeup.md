@@ -372,7 +372,7 @@ Recon 的順序如下：
 select * from users where username="username" and password="password";
 ```
 
-先試一組 happy walk，用 guest, guest 可以知道登入成功後會吐出 `TODO`, 失敗則會得到 `TODO`。
+先試一組 happy walk，用 guest, guest 可以知道登入成功後會吐出 `Welcome!`, 失敗則會得到 `Incorrect username or password.`。
 
 簡單是幾個 SQLi 的 payload `\'`, `\\'` 後，發現第二個輸入會觸發 500 error 頁面，可以得知後面用的是 Mysql，以及這段程式碼的實作方式：
 

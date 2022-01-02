@@ -1,0 +1,61 @@
+❯ nc edu-ctf.zoolab.org 30208
+----------- ** tcache chall ** -----------
+char *A = (char *) malloc(0x13);
+char *B = (char *) malloc(0x24);
+char *C = (char *) malloc(0x27);
+char *D = (char *) malloc(0x12);
+char *E = (char *) malloc(0x17);
+char *F = (char *) malloc(0x2d);
+char *G = (char *) malloc(0x20);
+free(E);
+free(A);
+free(F);
+free(B);
+free(C);
+free(D);
+free(G);
+
+[chunk size] 0x20: D --> A --> E --> NULL       (just send "D --> A --> E --> NULL")
+[chunk size] 0x30: ?
+> G --> C --> B --> NULL
+Correct !
+[chunk size] 0x40: ?
+> F --> NULL
+Correct !
+
+----------- ** address chall ** -----------
+assert( D == 0x55a5bc79b320 );
+E == ?  (send as hex format, e.g. "0x55a5bc79b320")
+> 0x55a5bc79b340
+Correct !
+
+----------- ** index chall ** -----------
+unsigned long *X = (unsigned long *) malloc(0x40);
+unsigned long *Y = (unsigned long *) malloc(0x40);
+Y[2] = 0xdeadbeef;
+X[?] == 0xdeadbeef      (just send an integer, e.g. "8")
+> 12
+Correct !
+
+----------- ** tcache fd chall ** -----------
+free(X);
+free(Y);
+assert( Y == 0x55a5bc79b420 );
+fd of Y == ?    (send as hex format, e.g. "0x55a5bc79b420")
+> 0x55a5bc79b3d0
+Correct !
+
+----------- ** fastbin fd chall (final) ** -----------
+[*] Restore the chunk to X and Y
+Y = (unsigned long *) malloc(0x40);
+X = (unsigned long *) malloc(0x40);
+[*] Do something to fill up 0x50 tcache
+...
+[*] finish
+free(X);
+free(Y);
+assert( Y == 0x55a5bc79b420 );
+fd of Y == ?    (send as hex format, e.g. "0x55a5bc79b420")
+> 0x55a5bc79b3c0
+Correct !
+Here is your flag: FLAG{heap_is_so_fun}
