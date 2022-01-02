@@ -4,6 +4,7 @@ __pycache__
 node_modules
 package_lock.json
 .gdb_history
+core
 
 # Not Upload File
 2021GoldenShield
