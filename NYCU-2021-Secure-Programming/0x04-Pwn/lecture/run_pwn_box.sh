@@ -1,0 +1,1 @@
+docker run -it --name pwnboxer --mount type=bind,src=/Users/froster/Project/my-ctf-writeup/NYCU-2021-Secure-Programming/0x04-Pwn,dst=/tmp/code --rm pwnbox

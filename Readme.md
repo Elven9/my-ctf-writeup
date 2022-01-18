@@ -16,6 +16,7 @@ About me:
 
 ## Years 2021
 
+- [2022 EOF Quals](https://hackmd.io/@MeA7WkptQeqqQEDIMaVfuw/r1X-ArR2K)
 - Golden Shield, Taiwan 2021, on-site
 - DamCTF 2021
 - [WeCTF 2021](./WeCTF-2021/writeup.md)
