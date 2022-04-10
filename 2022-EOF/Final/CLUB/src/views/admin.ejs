@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin | CLUB Club</title>
+  <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+<%- include('navbar', { username, config }); %>
+<div class="container">
+  <h2 class="title">Messages</h2>
+  <div class="message">
+    <div class="header">
+      <div class="title">Example Message</div>
+      <div class="user">admin</div>
+    </div>
+    <pre class="content">EOF{example}</pre>
+  </div>
+  <% for (const message of messages) { %>
+    <div class="message">
+      <div class="header">
+        <div class="title"><%= message.title %></div>
+        <div class="user"><%= message.username %></div>
+      </div>
+      <pre class="content"><%= message.content %></pre>
+    </div>
+  <% } %>
+</div>
+</body>
+</html>

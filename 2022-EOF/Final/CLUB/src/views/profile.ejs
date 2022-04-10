@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile | CLUB Club</title>
+  <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+<%- include('navbar', { username, config }); %>
+<div class="container">
+  <h2 class="title">Upgrade</h2>
+  <form action="/update" method="POST">
+    <label class="input"><span>Select Plan</span>
+      <select name="config">
+        <option value="tier0.yml">Tier 0</option>
+        <option value="tier1.yml">Tier 1</option>
+        <Option value="tier2.yml">Tier 2</Option>
+      </select>
+    </label>
+    <div class="submit">
+      <input type="submit"/>
+    </div>
+  </form>
+</div>
+</body>
+</html>

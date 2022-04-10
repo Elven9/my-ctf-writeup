@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Posts | CLUB Club</title>
+  <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+<%- include('navbar', { username, config }); %>
+<div class="container">
+  <h2 class="title">Tier 0</h2>
+  <div class="posts">
+    <blockquote class="instagram-media" data-instgrm-captioned="" data-instgrm-permalink="https://www.instagram.com/p/CX7l88ovun-/?utm_source=ig_embed" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CWViomLPCrI/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CVnOB_Kve8b/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CSrtvIzBWlb/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CGj4ifXFLiv/" data-instgrm-version="14"></blockquote>
+  </div>
+  <h2 class="title">Tier 1</h2>
+  <div class="posts <%- config.group >= 1 ? '' : 'hidden' %>">
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CZy8ukTvq5h/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CXqV2DkvCQK/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CXN9lrCPBAZ/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CNjEXhvFCeQ/" data-instgrm-version="14"></blockquote>
+  </div>
+  <h2 class="title">Tier 2</h2>
+  <div class="posts <%- config.group >= 2 ? '' : 'hidden' %>">
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CTXZ76-v2mX/" data-instgrm-version="14"></blockquote>
+    <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CTaP0SMhBG3/" data-instgrm-version="14"></blockquote>
+  </div>
+  <hr/>
+  <h2 class="title">Message</h2>
+  <form action="/sendMessage" method="POST">
+    <label class="input"><span>Title</span>
+      <input type="text" name="title"/>
+    </label>
+    <label class="input"><span>Content</span>
+      <textarea name="content"></textarea>
+    </label>
+    <div class="submit">
+      <input type="submit"/>
+    </div>
+  </form>
+</div>
+<script src="https://www.instagram.com/embed.js"></script>
+</body>
+</html>

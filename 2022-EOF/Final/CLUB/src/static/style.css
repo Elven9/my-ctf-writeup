@@ -1,0 +1,195 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+
+a {
+  text-decoration: none;
+}
+
+h2 {
+  font-weight: 600;
+  font-size: 1.5em;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5vw;
+  font-size: 1rem;
+  font-weight: 900;
+  font-family: sans-serif;
+  color: #fff;
+}
+nav .logo {
+  font-size: 1.5em;
+  color: #fff;
+}
+nav .control {
+  display: flex;
+  justify-content: flex-end;
+}
+nav .info {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+}
+nav #logout {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 3px;
+  padding: 10px 10px;
+  color: #fff;
+}
+nav #logout:hover {
+  background-color: #ffffff33;
+  transition: 0.3s;
+}
+
+.container {
+  padding: 30px 7.5vw;
+}
+
+h2.title {
+  font-family: sans-serif;
+  margin-bottom: 10px;
+}
+h2.title:before {
+  content: "> ";
+  color: #ffca35;
+}
+
+.message {
+  margin-bottom: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 1px;
+  padding: 5px;
+}
+.message .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+}
+.message .title:before {
+  content: "Title: ";
+  display: block;
+  color: #888;
+}
+.message .user:before {
+  content: "by ";
+  color: #888;
+}
+.message .content:before {
+  content: "Message: ";
+  display: block;
+  color: #888;
+}
+
+
+.posts {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.posts.hidden {
+  display: relative;
+  filter: blur(8px);
+}
+.posts.hidden:before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.posts > iframe {
+  margin-left: 10px !important;
+  margin-right: 10px !important;
+}
+
+label.input {
+  display: block;
+  font-family: sans-serif;
+  margin-bottom: 5px;
+}
+label.input span,
+label.input input,
+label.input select {
+  display: block;
+}
+label.input input,
+label.input textarea {
+  padding: 5px;
+  width: calc(100% - 10px);
+}
+label.input select {
+  padding: 5px;
+  width: 100%;
+}
+
+.submit {
+  text-align: right;
+}
+.submit > input[type=submit] {
+  margin: 0;
+  background-color: transparent;
+  border-width: 1px;
+  border-color: #5aadff;
+  color: #5aadff;
+  padding: 5px 10px;
+  border-radius: 1px;
+  cursor: pointer;
+}
+.submit > input[type=submit]:hover {
+  background-color: #5aadff33;
+}
